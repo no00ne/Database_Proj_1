@@ -1,11 +1,14 @@
+create database project1;
+create schema public;
+
 CREATE TABLE users (
     mid INTEGER primary key,
     name VARCHAR(20) not null,
     sex VARCHAR(10) not null,
-    birthday DATE,
+    birthday VARCHAR(10) not null,
     level INTEGER not null,
     sign TEXT,
-    fl_id INTEGER[],
+    fl_id VARCHAR(30)[],
     identity VARCHAR(20) not null
 );
 
@@ -38,3 +41,4 @@ CREATE TABLE content(
     content TEXT not null,
     primary key (BV, user_id, time)
 );
+
