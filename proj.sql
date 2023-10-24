@@ -1,44 +1,64 @@
 create database project1;
-create schema public;
+create schema project1;
 
+-- 1. user的基本信息
 CREATE TABLE users (
-    mid INTEGER primary key,
+    mid BIGINT primary key,
     name VARCHAR(20) not null,
     sex VARCHAR(10) not null,
-    birthday VARCHAR(10) not null,
+    birthday VARCHAR,
     level INTEGER not null,
     sign TEXT,
-    fl_id VARCHAR(30)[],
+    fl_id BIGINT[],
     identity VARCHAR(20) not null
 );
 
+-- 2. 视频的基本信息
 CREATE TABLE video_basic(
     BV VARCHAR(20) primary key,
     title VARCHAR(100) not null,
-    owner_id INTEGER not null,
-    commit_time DATE not null,
-    review_time DATE not null,
-    public_time DATE not null,
+    owner_id BIGINT not null,
+    commit_time VARCHAR not null,
+    review_time VARCHAR not null,
+    public_time VARCHAR not null,
     duration INTEGER not null,
     description TEXT,
-    reviewer_id INTEGER not null,
-    like_id INTEGER[],
-    coin_id INTEGER[],
-    favorite_id INTEGER[]
+    reviewer_id BIGINT
 );
 
+-- 3. 视频观看信息
 CREATE TABLE video_view(
-    BV VARCHAR(20) not null,
-    user_id INTEGER not null,
+    BV VARCHAR(20) not null references video_basic(BV),
+    user_id BIGINT not null references users(mid),
     view_time INTEGER not null,
     primary key (BV, user_id)
 );
 
+-- 4. 弹幕信息
 CREATE TABLE content(
-    BV VARCHAR(20) not null,
-    user_id INTEGER not null,
+    dm_id BIGINT primary key,
+    BV VARCHAR(20) not null references video_basic(BV),
+    user_id BIGINT not null references users(mid),
     time INTEGER not null,
-    content TEXT not null,
-    primary key (BV, user_id, time)
+    content TEXT not null
 );
 
+
+-- 5. 视频喜欢信息
+CREATE TABLE like_id(
+	BV VARCHAR(20) not null references video_basic(BV),
+	like_id BIGINT not null references users(mid),
+	primary key (BV, like_id)
+);
+-- 6. 视频硬币信息
+CREATE TABLE coin_id(
+	BV VARCHAR(20) not null references video_basic(BV),
+	coin_id BIGINT not null references users(mid),
+	primary key (BV, coin_id)
+);
+-- 7. 视频收藏信息
+CREATE TABLE favorite_id(
+	BV VARCHAR(20) not null references video_basic(BV),
+	favourite_id BIGINT not null references users(mid),
+	primary key (BV, favourite_id)
+);
