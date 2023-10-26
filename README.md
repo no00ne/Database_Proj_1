@@ -10,7 +10,10 @@ We got 3 files: users.csv, videos.csv and danmu.csv.
 
 
 We plan to use 4 tables to manage all the data.
-- Users: to store all data of users
+- Users: to store some of the data of users
 - Video_Basic: to store basic data of videos
 - Video_View: to record users who have viewed the video and their last watch time duration.
 - Content: to store all contents in all videos, which we call "Dan Mu" in Chinese.
+- like_id : to store users id who like the videos
+- coin_id : to store users id who give coins for the videos
+- favorite_id : to store users' id and their favorite videos BV.
