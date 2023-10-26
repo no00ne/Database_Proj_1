@@ -9,7 +9,7 @@ We got 3 files: users.csv, videos.csv and danmu.csv.
 
 
 
-We plan to use 4 tables to manage all the data.
+We plan to use 7 tables to manage all the data.
 - Users: to store some of the data of users
 - Video_Basic: to store basic data of videos
 - Video_View: to record users who have viewed the video and their last watch time duration.
