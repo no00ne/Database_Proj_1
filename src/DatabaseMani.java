@@ -1,12 +1,21 @@
-import java.sql.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DatabaseMani {
     private String database = "project1";
     private String username = "Steven";
     private String password = "7818";
     private Connection c = null;
+    String errorName = "";
+
     public Connection Connect() {
 
         try {
@@ -27,6 +36,7 @@ public class DatabaseMani {
             try {
                 c.close();
                 c = null;
+                System.out.println("Close connection success");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -35,37 +45,186 @@ public class DatabaseMani {
 
     public void readUser() {
         Connect();
-        int i = 0;
+
         String csvFile = "src/users.csv";
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
             String line;
-            String sql = "INSERT INTO users VALUES" +
-                    "(?, ?, ?, ?, ?, ?, ?, ?)";
-            PreparedStatement stmt = c.prepareStatement(sql);
+            Scanner in = new Scanner(System.in);
+            int i = in.nextInt();
 
             br.readLine();
-            while ((line = br.readLine()) != null) {
-                line = line.replace("\"", "").replace("[","-").replace("]","-");
-                String[] split_id = line.split("-"); // delete []
-                String[] data = split_id[0].split(",", -1);
-
-                stmt.setObject(1, Integer.parseInt(data[0]));
-                stmt.setString(2, data[1]);
-                stmt.setString(3, data[2]);
-                stmt.setString(4, data[3]); // TODO: some ways to change this into date
-                stmt.setObject(5, Integer.parseInt(data[4]));
-                stmt.setString(6, data[5]);
-                stmt.setArray(7, c.createArrayOf("integer", split_id[1].replace("\'", "").split(",")));
-                // TODO: some ways to change the code above into correct format
-                stmt.setString(8, split_id[2].replace(",", ""));
-                stmt.executeUpdate();
-                System.out.println("succes " + (++i) + " times");
+            for (int j = 0; j < i; j++) {
+                br.readLine();
             }
-            stmt.close();
+
+            while ((line = br.readLine()) != null) {
+                String regex = "(\"[^\"]*(\n[^\"])*\"|[^,\"]*)*";
+                String sql = "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?);";
+                PreparedStatement stmt = c.prepareStatement(sql);
+                StringBuilder sb = new StringBuilder(line);
+                while (sb.toString().split("\"", -1).length % 2 == 0) {
+                    line = br.readLine();
+                    sb.append("\n").append(line);
+                    i++;
+                }
+                line = sb.toString();
+                List<String> fields = parseCSVLine(line, regex);
+                errorName = fields.get(0);
+
+                stmt.setLong(1, Long.parseLong(fields.get(0)));
+                stmt.setString(2, fields.get(1));
+                stmt.setString(3, fields.get(2));
+                stmt.setString(4, fields.get(3));
+                stmt.setInt(5, Integer.parseInt(fields.get(4)));
+                stmt.setString(6, fields.get(5));
+                if (fields.get(6).equals("[]")) {
+                    stmt.setArray(7, c.createArrayOf("bigint", new String[]{}));
+                } else {
+                    stmt.setArray(7, c.createArrayOf("bigint", fields.get(6).
+                            replace("\"","").replaceAll("\\[|\\]|\'", "").split(",", -1)));
+                }
+                stmt.setString(8, fields.get(7));
+                stmt.executeUpdate();
+
+                System.out.println((++i) + " line finished.");
+            }
+            closeConnection();
         } catch (Exception e) {
+            System.out.println(errorName);
             e.printStackTrace();
+            closeConnection();
         }
     }
 
+    public void readContent() {
+        Connect();
+
+        String csvFile = "src/danmu.csv";
+        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
+            String line;
+            Scanner in = new Scanner(System.in);
+            int i = in.nextInt();
+
+            br.readLine();
+            for (int j = 0; j < i; j++) {
+                br.readLine();
+            }
+
+            while ((line = br.readLine()) != null) {
+                String regex = "(\"[^\"]*(\n[^\"])*\"|[^,\"]*)*";
+                String sql = "INSERT INTO content VALUES(?,?,?,?,?)";
+                PreparedStatement stmt = c.prepareStatement(sql);
+                String[] data = line.split(",", -1);
+                errorName = data[0] + " " + data[1] + " " + data[2] + " " + data[3];
+
+                stmt.setInt(1, ++i);
+                stmt.setString(2, data[0]);
+                stmt.setLong(3, Long.parseLong(data[1]));
+                stmt.setDouble(4, Double.parseDouble(data[2]));
+                StringBuilder str = new StringBuilder();
+                for (i = 3; i < data.length; i++) {
+                    str.append(data[i]);
+                }
+                stmt.setString(5, str.toString());
+                int num = stmt.executeUpdate();
+                System.out.println("success " + i + " times");
+                System.out.println(num);
+                closeConnection();
+            }
+        } catch (Exception e) {
+            System.err.println(errorName);
+            e.printStackTrace();
+            closeConnection();
+        }
+    }
+
+    private static List<String> parseCSVLine(String line, String regex) {
+        List<String> fields = new ArrayList<>();
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(line);
+        while (matcher.find()) {
+            String field = matcher.group();
+            if (!fields.isEmpty() && !field.isEmpty() && fields.get(fields.size() - 1).isEmpty()) {
+                fields.remove(fields.size() - 1);
+            }
+            fields.add(field);
+        }
+        return fields;
+    }
+
+
+    public void readVideos() {
+        Connect();
+
+        String csvFile = "src/videos.csv";
+        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
+            String line;
+            Scanner in = new Scanner(System.in);
+            int i = in.nextInt();
+
+            br.readLine();
+            while (i-- > 0) {
+                br.readLine();
+            }
+
+            while ((line = br.readLine()) != null) {
+                String sql = "INSERT INTO video_baisc VALUES(?,?,?,?,?,?,?,?,?)";
+                PreparedStatement stmt = c.prepareStatement(sql);
+                String[] data = line.split("\\[|\\]", -1);
+                String[] split = data[0].split(",", -1);
+
+                stmt.setString(1, split[0]);
+                stmt.setString(2, split[1]);
+                stmt.setInt(3, Integer.parseInt(split[2]));
+                stmt.setString(4, split[3]);
+                stmt.setString(5, split[4]);
+                stmt.setString(6, split[5]);
+                stmt.setInt(7, Integer.parseInt(split[6]));
+                stmt.setString(8, split[7]);
+                stmt.setInt(9, Integer.parseInt(split[8]));
+
+            }
+        } catch (Exception e) {
+            System.err.println(errorName);
+            e.printStackTrace();
+            closeConnection();
+        }
+    }
+
+    public void DeleteUsers() {
+        Connect();
+        try {
+            String sql = "DELETE FROM users;";
+            PreparedStatement stmt = c.prepareStatement(sql);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        closeConnection();
+    }
+
+    public void DeleteVideos() {
+        Connect();
+        try {
+            String sql = "DELETE FROM video_basic;";
+            PreparedStatement stmt = c.prepareStatement(sql);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        closeConnection();
+    }
+
+    public void DeleteView() {
+        Connect();
+        try {
+            String sql = "DELETE FROM video_view;";
+            PreparedStatement stmt = c.prepareStatement(sql);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        closeConnection();
+    }
     // TODO: finish the following methods: readVideoBasic, readVideoView, readContent
 }
