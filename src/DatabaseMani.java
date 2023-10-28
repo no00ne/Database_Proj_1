@@ -43,7 +43,7 @@ public class DatabaseMani {
         }
     }
 
-    public void readUser() {
+    public void readUser() { // read users.csv and insert into database
         Connect();
 
         String csvFile = "src/users.csv";
@@ -59,8 +59,6 @@ public class DatabaseMani {
 
             while ((line = br.readLine()) != null) {
                 String regex = "(\"[^\"]*(\n[^\"])*\"|[^,\"]*)*";
-                String sql = "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?);";
-                PreparedStatement stmt = c.prepareStatement(sql);
                 StringBuilder sb = new StringBuilder(line);
                 while (sb.toString().split("\"", -1).length % 2 == 0) {
                     line = br.readLine();
@@ -69,8 +67,9 @@ public class DatabaseMani {
                 }
                 line = sb.toString();
                 List<String> fields = parseCSVLine(line, regex);
-                errorName = fields.get(0);
 
+                String sql = "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?);";
+                PreparedStatement stmt = c.prepareStatement(sql);
                 stmt.setLong(1, Long.parseLong(fields.get(0)));
                 stmt.setString(2, fields.get(1));
                 stmt.setString(3, fields.get(2));
@@ -85,12 +84,9 @@ public class DatabaseMani {
                 }
                 stmt.setString(8, fields.get(7));
                 stmt.executeUpdate();
-
-                System.out.println((++i) + " line finished.");
             }
             closeConnection();
         } catch (Exception e) {
-            System.out.println(errorName);
             e.printStackTrace();
             closeConnection();
         }
@@ -153,43 +149,6 @@ public class DatabaseMani {
     }
 
 
-    public void readVideos() {
-        Connect();
-
-        String csvFile = "src/videos.csv";
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
-            String line;
-            Scanner in = new Scanner(System.in);
-            int i = in.nextInt();
-
-            br.readLine();
-            while (i-- > 0) {
-                br.readLine();
-            }
-
-            while ((line = br.readLine()) != null) {
-                String sql = "INSERT INTO video_baisc VALUES(?,?,?,?,?,?,?,?,?)";
-                PreparedStatement stmt = c.prepareStatement(sql);
-                String[] data = line.split("\\[|\\]", -1);
-                String[] split = data[0].split(",", -1);
-
-                stmt.setString(1, split[0]);
-                stmt.setString(2, split[1]);
-                stmt.setInt(3, Integer.parseInt(split[2]));
-                stmt.setString(4, split[3]);
-                stmt.setString(5, split[4]);
-                stmt.setString(6, split[5]);
-                stmt.setInt(7, Integer.parseInt(split[6]));
-                stmt.setString(8, split[7]);
-                stmt.setInt(9, Integer.parseInt(split[8]));
-
-            }
-        } catch (Exception e) {
-            System.err.println(errorName);
-            e.printStackTrace();
-            closeConnection();
-        }
-    }
 
     public void DeleteUsers() {
         Connect();
