@@ -18,6 +18,7 @@ CREATE TABLE video_basic(
     BV VARCHAR primary key,
     title VARCHAR not null,
     owner_id BIGINT not null,
+    owner_name VARCHAR not null,
     commit_time VARCHAR not null,
     review_time VARCHAR not null,
     public_time VARCHAR not null,
@@ -62,4 +63,3 @@ CREATE TABLE favorite_id(
 	favourite_id BIGINT not null references users(mid),
 	primary key (BV, favourite_id)
 );
-
