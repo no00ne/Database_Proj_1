@@ -1,3 +1,4 @@
+import java.sql.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.Connection;
@@ -11,29 +12,34 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 public class DatabaseMani {
-    private String database = "project1";
-    private String username = "Steven";
-    private String password = "****";
+    private String database = "postgres";
+    private String username = "postgres";
+    private String password = "";
     private Connection c = null;
     String errorName = "";
     long num;
 
     public Connection Connect() { // get connection to database
-
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:postgresql://localhost:5432/" + database);
+        config.setUsername(username);
+        config.setPassword(password);
+        config.setMaximumPoolSize(10);
+        HikariDataSource dataSource = new HikariDataSource(config);
         try {
-            Class.forName("org.postgresql.Driver");
-            c = DriverManager.getConnection("jdbc:postgresql://localhost:5432/" + database,
-                    username, password);
+            c = dataSource.getConnection();
             System.out.println("Connect success");
-        } catch (Exception e) {
+            return c;
+        } catch (SQLException e) {
             e.printStackTrace();
             System.err.println(e.getMessage());
             System.exit(0);
+            return null;
         }
-        return c;
     }
 
     private void closeConnection() { // close connection to database
@@ -66,7 +72,7 @@ public class DatabaseMani {
                 line = sb.toString();
                 List<String> fields = parseCSVLine(line, regex);
 
-                String sql = "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?);";
+                String sql = "INSERT INTO project1.users VALUES(?, ?, ?, ?, ?, ?, ?, ?);";
                 PreparedStatement stmt = c.prepareStatement(sql);
                 stmt.setLong(1, Long.parseLong(fields.get(0)));
                 stmt.setString(2, fields.get(1));
@@ -139,18 +145,44 @@ public class DatabaseMani {
     }
 
     public void readVideo() {
+        int i=0;//计数器
+
         /* read videos.csv and insert into table
             video_basic, video_view, like_id, coin_id, favorite_id
         */
         Connect();
 
+
+
+
+
+
+       /* try {
+            disableConstraintsInSchema(c, "project1");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }*/
         String csvFile = "src/videos.csv";
+
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
+
             String regex = "(\"[^\"]*(\n[^\"])*\"|[^,\"]*)*";
             String line;
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-
             br.readLine();
+            String insertVideoSQL = "INSERT INTO project1.video_basic VALUES(?,?,?,?,?,?,?,?,?,?)";
+            String insertViewSQL = "INSERT INTO project1.video_view VALUES(?,?,?)";
+            String insertLikeSQL = "INSERT INTO project1.like_id VALUES(?,?)";
+            String insertCoinSQL = "INSERT INTO project1.coin_id VALUES(?,?)";
+            String insertFavoriteSQL = "INSERT INTO project1.favorite_id VALUES(?,?)";
+
+        PreparedStatement insertVideoStmt = c.prepareStatement(insertVideoSQL);
+        PreparedStatement insertViewStmt = c.prepareStatement(insertViewSQL);
+        PreparedStatement insertLikeStmt = c.prepareStatement(insertLikeSQL);
+        PreparedStatement insertCoinStmt = c.prepareStatement(insertCoinSQL);
+        PreparedStatement insertFavoriteStmt = c.prepareStatement(insertFavoriteSQL);
+
+
             while ((line = br.readLine()) != null) {
                 StringBuilder sb = new StringBuilder(line);
                 while (sb.toString().split("\"", -1).length % 2 == 0) {
@@ -172,58 +204,74 @@ public class DatabaseMani {
                         .replaceAll("\\[|\\]|\\(|\\)|\'|\"", "").replaceAll(" ", "")
                         .split(",", -1)).toList();
 
-                String sql = "INSERT INTO video_basic VALUES(?,?,?,?,?,?,?,?,?,?)"; // video basic
-                PreparedStatement stmt = c.prepareStatement(sql);
-                stmt.setString(1, fields.get(0));
-                stmt.setString(2, fields.get(1));
-                stmt.setLong(3, Long.parseLong(fields.get(2)));
-                stmt.setString(4, fields.get(3));
-                stmt.setTimestamp(5, new Timestamp(dateFormat.parse(fields.get(4)).getTime()));
-                stmt.setTimestamp(6, new Timestamp(dateFormat.parse(fields.get(5)).getTime()));
-                stmt.setTimestamp(7, new Timestamp(dateFormat.parse(fields.get(6)).getTime()));
-                stmt.setInt(8, Integer.parseInt(fields.get(7)));
-                stmt.setString(9, fields.get(8));
-                stmt.setLong(10, Long.parseLong(fields.get(9)));
-                stmt.executeUpdate();
 
-                for (int j = 0; j < list4.size(); j += 2) {
-                    sql = "INSERT INTO video_view VALUES(?,?,?)"; // video view
-                    stmt = c.prepareStatement(sql);
-                    stmt.setString(1, fields.get(0));
-                    stmt.setLong(2, Long.parseLong(list4.get(j)));
-                    stmt.setInt(3, Integer.parseInt(list4.get(j + 1)));
-                    stmt.executeUpdate();
-                }
+                insertVideoStmt.setString(1, fields.get(0));
+                insertVideoStmt.setString(2, fields.get(1));
+                insertVideoStmt.setLong(3, Long.parseLong(fields.get(2)));
+                insertVideoStmt.setString(4, fields.get(3));
+               insertVideoStmt.setTimestamp(5, new Timestamp(dateFormat.parse(fields.get(4)).getTime()));
+                insertVideoStmt.setTimestamp(6, new Timestamp(dateFormat.parse(fields.get(5)).getTime()));
+                insertVideoStmt.setTimestamp(7, new Timestamp(dateFormat.parse(fields.get(6)).getTime()));
+                insertVideoStmt.setInt(8, Integer.parseInt(fields.get(7)));
+                insertVideoStmt.setString(9, fields.get(8));
+                insertVideoStmt.setLong(10, Long.parseLong(fields.get(9)));
+                insertVideoStmt.executeUpdate();
 
-                sql = "INSERT INTO like_id VALUES(?,?)"; // like id
-                stmt = c.prepareStatement(sql);
-                for (String s : list1) {
-                    stmt.setString(1, fields.get(0));
-                    stmt.setLong(2, Long.parseLong(s));
-                    stmt.executeUpdate();
-                }
+            // 批量插入 video_view
+            for (int j = 0; j < list4.size(); j += 2) {
+                insertViewStmt.setString(1, fields.get(0));
+                insertViewStmt.setLong(2, Long.parseLong(list4.get(j)));
+                insertViewStmt.setInt(3, Integer.parseInt(list4.get(j + 1)));
+                insertViewStmt.addBatch();
+            }
 
-                sql = "INSERT INTO coin_id VALUES(?,?)"; // coin id
-                stmt = c.prepareStatement(sql);
-                for (String s : list2) {
-                    stmt.setString(1, fields.get(0));
-                    stmt.setLong(2, Long.parseLong(s));
-                    stmt.executeUpdate();
-                }
+            // 批量插入 like_id
+            for (String s : list1) {
+                insertLikeStmt.setString(1, fields.get(0));
+                insertLikeStmt.setLong(2, Long.parseLong(s));
+                insertLikeStmt.addBatch();
+            }
 
-                sql = "INSERT INTO favorite_id VALUES(?,?)"; // favorite id
-                stmt = c.prepareStatement(sql);
-                for (String s : list3) {
-                    stmt.setString(1, fields.get(0));
-                    stmt.setLong(2, Long.parseLong(s));
-                    stmt.executeUpdate();
+            // 批量插入 coin_id
+            for (String s : list2) {
+                insertCoinStmt.setString(1, fields.get(0));
+                insertCoinStmt.setLong(2, Long.parseLong(s));
+                insertCoinStmt.addBatch();
+            }
+
+            // 批量插入 favorite_id
+            for (String s : list3) {
+                insertFavoriteStmt.setString(1, fields.get(0));
+                insertFavoriteStmt.setLong(2, Long.parseLong(s));
+                insertFavoriteStmt.addBatch();
+            }
+                System.out.println(++i);
+                if (i % 500 == 0) {
+                    // 在 i 被 100 整除时执行的操作
+                    Statement state = c.createStatement();
+                    state.executeUpdate("SET CONSTRAINTS ALL DEFERRED;");
+                    insertVideoStmt.executeBatch();
+                    insertViewStmt.executeBatch();
+                    insertLikeStmt.executeBatch();
+                    insertCoinStmt.executeBatch();
+                    insertFavoriteStmt.executeBatch();
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            closeConnection();
-        }
+
+        // 执行批量插入
+        insertVideoStmt.executeBatch();
+        insertViewStmt.executeBatch();
+        insertLikeStmt.executeBatch();
+        insertCoinStmt.executeBatch();
+        insertFavoriteStmt.executeBatch();
+            Statement state = c.createStatement();
+            state.executeUpdate("SET CONSTRAINTS ALL IMMEDIATE");
+    } catch (Exception e) {
+        e.printStackTrace();
+        closeConnection();
     }
+}
+
 
     private static List<String> parseCSVLine(String line, String regex) { // parse csv line
         List<String> fields = new ArrayList<>();
@@ -238,4 +286,30 @@ public class DatabaseMani {
         }
         return fields;
     }
+
+ /*   public static void disableConstraintsInSchema(Connection connection, String schemaName) throws Exception {
+        // 构造 SQL 查询，用于获取指定 schema 内的所有约束的名称
+        String query = "SELECT conname FROM pg_constraint WHERE connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)";
+
+        // 构建 PreparedStatement 对象
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setString(1, schemaName);
+
+        // 执行查询
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        // 依次禁用每个约束
+        while (resultSet.next()) {
+            String constraintName = resultSet.getString(1);
+            String disableConstraintSQL = "ALTER TABLE " + schemaName + "." + constraintName + " DISABLE TRIGGER ALL";
+            PreparedStatement disableStatement = connection.prepareStatement(disableConstraintSQL);
+            disableStatement.executeUpdate();
+            disableStatement.close();
+        }
+
+        // 关闭资源
+        resultSet.close();
+        preparedStatement.close();
+    }*/
 }
+
