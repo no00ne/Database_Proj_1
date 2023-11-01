@@ -1,5 +1,5 @@
 create database project1;
-create schema project1;
+create schema project1.project1;
 
 -- 1. user的基本信息
 CREATE TABLE users (

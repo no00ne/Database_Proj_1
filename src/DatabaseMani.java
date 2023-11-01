@@ -2,7 +2,6 @@ import java.sql.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -23,8 +22,8 @@ public class DatabaseMani {
     String errorName = "";
     long num;
 
-    public Connection Connect() { // get connection to database
-        HikariConfig config = new HikariConfig();
+    public Connection ConnectByHikari(int maximumPoolSize) { // get connection to database
+        HikariConfig config = new HikariConfig();//这里用了Hikari连接池
         config.setJdbcUrl("jdbc:postgresql://localhost:5432/" + database);
         config.setUsername(username);
         config.setPassword(password);
@@ -32,7 +31,7 @@ public class DatabaseMani {
         HikariDataSource dataSource = new HikariDataSource(config);
         try {
             c = dataSource.getConnection();
-            System.out.println("Connect success");
+            System.out.println("ConnectByHikari success");
             return c;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -54,8 +53,8 @@ public class DatabaseMani {
         }
     }
 
-    public void readUser() { // read users.csv and insert into database
-        Connect();
+    public void readUser(String IntervalOfExecution, int part, String connectionPoll, int maximumPoolSize, int thread) { // read users.csv and insert into database
+        ConnectByHikari(maximumPoolSize);
 
         String csvFile = "src/users.csv";
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -96,8 +95,8 @@ public class DatabaseMani {
         }
     }
 
-    public void readContent() { // read danmu.csv and insert into database
-        Connect();
+    public void readContent(String IntervalOfExecution, int part, String connectionPoll, int maximumPoolSize, int thread) { // read danmu.csv and insert into database
+        ConnectByHikari(maximumPoolSize);
 
         String csvFile = "src/danmu.csv";
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -144,13 +143,20 @@ public class DatabaseMani {
         }
     }
 
-    public void readVideo() {
+    public void readVideo(String databaseSoftware, int IntervalOfExecution, String connectionPoll, int maximumPoolSize, int thread) {
         int i=0;//计数器
 
         /* read videos.csv and insert into table
             video_basic, video_view, like_id, coin_id, favorite_id
         */
-        Connect();
+        switch (connectionPoll) {
+            case "Hikari" -> ConnectByHikari(maximumPoolSize);
+            default -> {
+                System.out.println("第三个项目实参是连接池选择，你的输入错误或未配置你输入的连接池");
+                System.exit(0);
+            }
+
+        }
 
 
 
@@ -176,7 +182,7 @@ public class DatabaseMani {
             String insertCoinSQL = "INSERT INTO project1.coin_id VALUES(?,?)";
             String insertFavoriteSQL = "INSERT INTO project1.favorite_id VALUES(?,?)";
 
-        PreparedStatement insertVideoStmt = c.prepareStatement(insertVideoSQL);
+        PreparedStatement insertVideoStmt = c.prepareStatement(insertVideoSQL);//这是批处理命令
         PreparedStatement insertViewStmt = c.prepareStatement(insertViewSQL);
         PreparedStatement insertLikeStmt = c.prepareStatement(insertLikeSQL);
         PreparedStatement insertCoinStmt = c.prepareStatement(insertCoinSQL);
@@ -246,11 +252,11 @@ public class DatabaseMani {
                 insertFavoriteStmt.addBatch();
             }
                 System.out.println(++i);
-                if (i % 500 == 0) {
-                    // 在 i 被 100 整除时执行的操作
+                if (i % IntervalOfExecution == 0) {
+                    // 以下是在 i 被 IntervalOfExecution 整除时执行的操作
                     Statement state = c.createStatement();
-                    state.executeUpdate("SET CONSTRAINTS ALL DEFERRED;");
-                    insertVideoStmt.executeBatch();
+                    state.executeUpdate("SET CONSTRAINTS ALL DEFERRED;");//这里暂时推迟约束和外键检查
+                    insertVideoStmt.executeBatch();//这些是执行批处理命令，完成实际数据库的导入
                     insertViewStmt.executeBatch();
                     insertLikeStmt.executeBatch();
                     insertCoinStmt.executeBatch();
@@ -285,6 +291,23 @@ public class DatabaseMani {
             fields.add(field);
         }
         return fields;
+    }
+
+    public void clearAll() {
+        ConnectByHikari(10);
+        Statement state = null;
+        try {
+            state = c.createStatement();
+            state.executeUpdate("TRUNCATE project1.coin_id CASCADE;\n" +
+                    "TRUNCATE project1.favorite_id CASCADE;\n" +
+                    "TRUNCATE project1.like_id CASCADE;\n" +
+                    " TRUNCATE project1.video_view CASCADE;\n" +
+                    "TRUNCATE project1.users CASCADE;\n" +
+                    "TRUNCATE project1.video_basic CASCADE;");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
  /*   public static void disableConstraintsInSchema(Connection connection, String schemaName) throws Exception {

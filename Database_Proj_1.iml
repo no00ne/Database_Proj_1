@@ -11,5 +11,7 @@
     <orderEntry type="library" name="postgresql-42.6.0" level="project" />
     <orderEntry type="library" name="HikariCP-5.0.1" level="project" />
     <orderEntry type="library" name="ca.pjer.logback.awslogs.appender" level="project" />
+    <orderEntry type="library" name="apache.mahout.commons.cli" level="project" />
+    <orderEntry type="library" name="apache.commons.collections4" level="project" />
   </component>
 </module>

@@ -21,13 +21,33 @@ We plan to use 7 tables to manage all the data.
 
 
 We have input all the data into the database named =="project1"==. And we got statistic that there 37881 users, 7865 videos and 12478996 contents at all.
+## before running u need to do :
+```bash
+1. you`d better close all computer defend ,just like windows`s Antimalware Service Executable
+2. you`d better change your datebase`s conf into these [postgresql.conf](src%2Fpostgresql.conf)
+3. creat a datebase using [proj.sql](proj.sql)
+4. u need to set run Configurations :[Main.xml](.idea%2FrunConfigurations%2FMain.xml)
+u need to set <option name="VM_PARAMETERS" value="-Xmx10g " />, which is in The above file
+      "-Xmx10g " means The maximum heap memory is 10gb, more heap memory allows more IntervalOfExecution , means the program will be faster
+ please Make sure The maximum heap memory and IntervalOfExecution match !!!! 
+5. u need to set follow Program arguments   
+          String   databaseSoftware = args[0]; //数据库选择
+          int IntervalOfExecution = Integer.parseInt(args[1]);//进行多少次循环执行一次预处理命令
+          String ConnectionPoll = args[2];//数据库连接池选择 ，有助于提高导入速度，JDBC默认是没有连接池的
+          int MaximumPoolSize = Integer.parseInt(args[3]);//最大连接池个数，或者是最大允许多少连接，这个值需要大于thread
+          int thread = Integer.parseInt(args[4]);//线程数,最好和cpu核数相同
+6.set your database, username, password   at   [DatabaseMani.java](src%2FDatabaseMani.java)     
+7. Here are commands:
+readusers   
+readcontents
+readvideos
+runAll //run above 3 commands
+clearall //This is THE SCRIPT that formats the database and returns it to a no-data state
+exit 
 
-We use java to write a script to input all data. I know that Python is slower than Java so I just use java.
 
-Java program spent about 17793.785s to import all data into ```video_view```, about 24220.655s to import ```like_id```, ```coin_id```, ```favorite_id``` in all, about 1403.025s to import ```content```.
-Others spent much less time.
+```
 
-I don't have enough time to implement it, but I believe that the process can be faster if I use ```CPP``` or ```C```.
 
 ## Something about my computer:
 ```bash

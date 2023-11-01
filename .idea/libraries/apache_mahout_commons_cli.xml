@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="apache.mahout.commons.cli" type="repository">
+    <properties maven-id="org.apache.mahout.commons:commons-cli:2.0-mahout" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/commons-cli-2.0-mahout.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
